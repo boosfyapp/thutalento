@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { X, User, Briefcase, MapPin, GraduationCap, Clock, DollarSign, Wrench, Languages, FileText, CheckCircle, Circle } from 'lucide-react'
 import StatusBadge from './StatusBadge'
 import { format } from 'date-fns'
@@ -33,19 +34,26 @@ interface Props {
   onClose: () => void
 }
 
-const FICHA_FIELDS = [
-  { key: 'nombre',              label: 'Nombre',            icon: User },
-  { key: 'vacante_aplicada',    label: 'Vacante',           icon: Briefcase },
-  { key: 'ciudad',              label: 'Ciudad',            icon: MapPin },
-  { key: 'area_experiencia',    label: 'Área',              icon: Briefcase },
-  { key: 'experiencia_anos',    label: 'Experiencia',       icon: Clock, format: (v: number) => `${v} año${v !== 1 ? 's' : ''}` },
-  { key: 'nivel_estudios',      label: 'Estudios',          icon: GraduationCap },
-  { key: 'disponibilidad',      label: 'Disponibilidad',    icon: Clock },
-  { key: 'expectativa_salarial',label: 'Expectativa salarial', icon: DollarSign },
-  { key: 'habilidades',         label: 'Habilidades',       icon: Wrench },
-  { key: 'idiomas',             label: 'Idiomas',           icon: Languages },
-  { key: 'tiene_cv',            label: 'Tiene CV',          icon: FileText, format: (v: boolean) => v ? 'Sí' : 'No' },
-] as const
+interface FichaField {
+  key: keyof Candidato
+  label: string
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  format?: (v: unknown) => string
+}
+
+const FICHA_FIELDS: FichaField[] = [
+  { key: 'nombre',               label: 'Nombre',               icon: User },
+  { key: 'vacante_aplicada',     label: 'Vacante',              icon: Briefcase },
+  { key: 'ciudad',               label: 'Ciudad',               icon: MapPin },
+  { key: 'area_experiencia',     label: 'Área',                 icon: Briefcase },
+  { key: 'experiencia_anos',     label: 'Experiencia',          icon: Clock,        format: (v) => `${v} año${Number(v) !== 1 ? 's' : ''}` },
+  { key: 'nivel_estudios',       label: 'Estudios',             icon: GraduationCap },
+  { key: 'disponibilidad',       label: 'Disponibilidad',       icon: Clock },
+  { key: 'expectativa_salarial', label: 'Expectativa salarial', icon: DollarSign },
+  { key: 'habilidades',          label: 'Habilidades',          icon: Wrench },
+  { key: 'idiomas',              label: 'Idiomas',              icon: Languages },
+  { key: 'tiene_cv',             label: 'Tiene CV',             icon: FileText,     format: (v) => v ? 'Sí' : 'No' },
+]
 
 function completitudColor(pct: number) {
   if (pct >= 80) return '#22C55E'
