@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { X, User, Briefcase, MapPin, GraduationCap, Clock, DollarSign, Wrench, Languages, FileText, CheckCircle, Circle } from 'lucide-react'
+import { type LucideIcon, X, User, Briefcase, MapPin, GraduationCap, Clock, DollarSign, Wrench, Languages, FileText, CheckCircle, Circle } from 'lucide-react'
 import StatusBadge from './StatusBadge'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -37,7 +37,7 @@ interface Props {
 interface FichaField {
   key: keyof Candidato
   label: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
+  icon: LucideIcon
   format?: (v: unknown) => string
 }
 
