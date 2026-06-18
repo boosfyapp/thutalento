@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { query } from '@/lib/db'
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const estado = searchParams.get('estado')
+  const search = searchParams.get('q')
+  const page = Number(searchParams.get('page') || 1)
+  const limit = 50
+  const offset = (page - 1) * limit
+
+  let sql = `
+    SELECT c.*,
+      r.nombre AS reclutador_nombre,
+      r.whatsapp AS reclutador_wa
+    FROM candidatos c
+    LEFT JOIN asignaciones a ON a.candidato_id = c.id
+    LEFT JOIN reclutadores r ON r.id = a.reclutador_id
+    WHERE 1=1
+  `
+  const params: unknown[] = []
+
+  if (estado) {
+    params.push(estado)
+    sql += ` AND c.estado = $${params.length}`
+  }
+  if (search) {
+    params.push(`%${search}%`)
+    sql += ` AND (c.nombre ILIKE $${params.length} OR c.phone ILIKE $${params.length})`
+  }
+
+  sql += ` ORDER BY c.created_at DESC LIMIT ${limit} OFFSET ${offset}`
+
+  try {
+    const rows = await query(sql, params)
+    const [{ count }] = await query<{ count: string }>('SELECT COUNT(*) FROM candidatos')
+    return NextResponse.json({ data: rows, total: Number(count) })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}
