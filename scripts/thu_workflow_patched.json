@@ -1,0 +1,1296 @@
+{
+  "name": "Thu Talento Humano — Agente IA",
+  "description": null,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2048,
+        112
+      ],
+      "id": "349dcc26-b2e4-429d-ab2c-be105ad460ba",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FXAla6LzcM8ZyIxJ",
+          "name": "OpenAi Frace Principal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Boosfy Inbound').item.json.body.conversation.id }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2224,
+        112
+      ],
+      "id": "a62725f6-2b51-4d45-86e5-de96531c0210",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f061422f-c6c9-44a7-a8e5-150b97324550",
+              "name": "mensajeFinal",
+              "value": "={{$node[\"AI Agent\"].json[\"output\"]}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3104,
+        -160
+      ],
+      "id": "c3f2ed16-b353-49b3-a224-504ed08bc3c0",
+      "name": "Preparar Respuesta"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.mediaUrl.replace(\"https://localhost:9000\",\"https://app.boosfy.com\")}}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        704,
+        -480
+      ],
+      "id": "88fd54c9-37a0-4def-ac43-4cf4b04ff230",
+      "name": "Descargar audio"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -480
+      ],
+      "id": "4db4cdd3-3070-47eb-a6b7-d012352814e3",
+      "name": "Transcribir audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "FXAla6LzcM8ZyIxJ",
+          "name": "OpenAi Frace Principal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "692545a2-68e4-4e90-b875-b4bebef2acc4",
+              "name": "content",
+              "value": "=<audio>\n{{ $json.text }}\n<audio>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        -480
+      ],
+      "id": "07252c19-75ea-403e-aa0f-9163836b1ea3",
+      "name": "Audio content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a2660a6e-4ce9-4bff-afc4-ad21c9f90155",
+              "name": "content",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        80
+      ],
+      "id": "756e9f38-0154-45b0-bc89-c634cab3a0f9",
+      "name": "Text content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "390690b4-e296-496a-9dc1-d540329c6e2c",
+              "name": "chat_input",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1920,
+        -160
+      ],
+      "id": "a675ef65-3430-4090-b7e3-92a8228478d4",
+      "name": "Chat input"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "thu-talento-humano-agente",
+        "responseMode": "lastNode",
+        "options": {
+          "responsePropertyName": "mensajeFinal"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        -176
+      ],
+      "id": "b9c33ca3-70cc-4290-8b0c-e7a157310e0a",
+      "name": "Boosfy Inbound"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Chat input').item.json.chat_input }}",
+        "options": {
+          "systemMessage": "Eres Sofia, asistente virtual de Thu Talento Humano, empresa especializada en reclutamiento y seleccion de personal.\n\nTu objetivo es atender candidatos que buscan empleo, recopilar sus datos clave y orientarlos en el proceso.\n\nINSTRUCCIONES:\n1. Saluda al candidato y pregunta su nombre completo.\n2. Pregunta a que vacante esta interesado en aplicar.\n3. Recoge informacion relevante: experiencia, disponibilidad, expectativa salarial.\n4. Informa que un reclutador le dara seguimiento personalizado muy pronto.\n5. Se amable, profesional y conciso. Idioma: Espanol.\n\nHoy es: {{ $now.format('dd MMM. yyyy', 'es') }}\nID de sesion: {{ $('Boosfy Inbound').item.json.body.conversation.id }}\n\nMensaje del candidato:\n{{ $('Chat input').item.json.chat_input }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2240,
+        -160
+      ],
+      "id": "4b5e2faa-acbe-4e6a-9074-15e23c906870",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b31ce9f0-93b0-4b57-aa3a-afcce9eaab29",
+              "name": "messageType",
+              "value": "={{ $json.body.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "a92f4e45-bfa0-4fad-8421-450f249eb6ee",
+              "name": "isMediaMessage",
+              "value": "={{ $json.body.isMediaMessage }}",
+              "type": "string"
+            },
+            {
+              "id": "a268b249-2561-4d0d-847c-c9945b8a9716",
+              "name": "chatInput",
+              "value": "={{ $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "96f1c5d2-1acc-45a1-848f-c01ccddc4eb8",
+              "name": "mediaUrl",
+              "value": "={{ $json.body.media.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -384,
+        -176
+      ],
+      "id": "21819306-65f7-4359-b69d-57d00a5775c2",
+      "name": "Set Fields"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "document",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bf2c4f36-a203-4617-bcde-f40d8e2032d5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Document"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fb83f31a-4827-465e-a702-28d8f385d689",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2c54032c-6b10-4e03-a0b7-afc08e8db5a3",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c7ff91c8-a470-4599-9216-8cce1bf06fcb",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        0,
+        -208
+      ],
+      "id": "2a906da1-22c4-45e4-b816-96cbf067199e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "692545a2-68e4-4e90-b875-b4bebef2acc4",
+              "name": "content",
+              "value": "=<img>\n{{ $json['0'].content[0].text }}\n<img>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        -240
+      ],
+      "id": "93983621-04dd-42dc-8d95-229bf83f3e0c",
+      "name": "Audio content1"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.mediaUrl.replace(\"https://localhost:9000\",\"https://app.boosfy.com\")}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        704,
+        -672
+      ],
+      "id": "56e12cc1-08d2-4a46-9ff9-5558fa787f35",
+      "name": "Descargar doc"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "692545a2-68e4-4e90-b875-b4bebef2acc4",
+              "name": "content",
+              "value": "=<doc>\n{{ $json.text }}\n<doc>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        -672
+      ],
+      "id": "97b41453-74f4-40dc-a1eb-9a16a6e16bf0",
+      "name": "Doc content"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "Describe la imagen con detalle.\nSi es un documento, explica qué contiene.",
+        "imageUrls": "={{$json.mediaUrl.replace(\"https://localhost:9000\",\"https://app.boosfy.com\")}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -240
+      ],
+      "id": "d00bcf80-926a-4cfd-a5c2-a7c98a2f0e61",
+      "name": "Analizar img",
+      "credentials": {
+        "openAiApi": {
+          "id": "FXAla6LzcM8ZyIxJ",
+          "name": "OpenAi Frace Principal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        -672
+      ],
+      "id": "d832963a-ed07-4aac-b7c1-c1387f710b50",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "description": "Activa esta función después de identificar los problemas y necesidades del cliente en la conversación, ANTES de presentar cualquier plan o precio.\nEnvía al subworkflow estos datos:\n\n{{ $('Set Fields').item.json.phoneNumber }}\n\nRespuesta esperada: \"Video enviado\". Si la respuesta es diferente o hay error, continúa la conversación normalmente sin mencionar el fallo.",
+        "workflowId": {
+          "__rl": true,
+          "value": "eyVAWpRMINjCGofm",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/eyVAWpRMINjCGofm",
+          "cachedResultName": "Tool_video_presentacion"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phoneNumber": "={{ $('Boosfy Inbound').item.json.body.contact.phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "phoneNumber",
+              "displayName": "phoneNumber",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2432,
+        112
+      ],
+      "id": "f6eddff4-be8d-4455-8f5d-22b46a5af190",
+      "name": "Tool_video_presentacion"
+    },
+    {
+      "parameters": {
+        "description": "Activa esta función cuando el cliente escriba \"agente\", \"hablar con un humano\", solicite soporte técnico o quiera realizar una compra directamente.\nEnvía al subworkflow estos datos:\n\n{{ $('Boosfy Inbound').item.json.body.contact.phone }}\n\nUna vez activado, informa al cliente: \"En un momento un asesor se pondrá en contacto contigo. 😊\"",
+        "workflowId": {
+          "__rl": true,
+          "value": "f3M7u17ROQbRiN7P",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/f3M7u17ROQbRiN7P",
+          "cachedResultName": "Tool_notify_soporte"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phoneNumber": "={{ $('Boosfy Inbound').item.json.body.contact.phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "phoneNumber",
+              "displayName": "phoneNumber",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2624,
+        112
+      ],
+      "id": "c377eb4b-1890-4a42-9eac-185839461a80",
+      "name": "Tool_notify_soporte"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE seguimientos SET status = 'respondio', updated_at = NOW() WHERE conversation_id = '={{ $json.body.conversation.id }}'  AND status = 'esperando'",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -752,
+        80
+      ],
+      "id": "marcar-respondio-node",
+      "name": "Marcar Respondio"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO seguimientos (phone, conversation_id, channel_id, ultimo_mensaje_bot, status, seguimientos_enviados) VALUES ('={{ $('Boosfy Inbound').item.json.body.contact.phone }}', '={{ $('Boosfy Inbound').item.json.body.conversation.id }}', 3389, '={{ $('Preparar Respuesta').item.json.mensajeFinal }}', 'esperando', 0) ON CONFLICT (conversation_id) DO UPDATE SET ultimo_mensaje_bot = EXCLUDED.ultimo_mensaje_bot, status = 'esperando', seguimientos_enviados = 0, updated_at = NOW()",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3500,
+        -160
+      ],
+      "id": "guardar-seguimiento-node",
+      "name": "Guardar Seguimiento"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "respuesta-final-field",
+              "name": "mensajeFinal",
+              "value": "={{ $('Preparar Respuesta').item.json.mensajeFinal }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3700,
+        -160
+      ],
+      "id": "respuesta-final-node",
+      "name": "Respuesta Final"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO candidatos (phone, conversation_id, channel_id) VALUES ('={{ $('Boosfy Inbound').item.json.body.contact.phone }}', '={{ $('Boosfy Inbound').item.json.body.conversation.id }}', 3389) ON CONFLICT (conversation_id) DO UPDATE SET updated_at = NOW() RETURNING id, phone, nombre, estado",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3700,
+        -160
+      ],
+      "id": "95dd5779-ad8b-469d-bd11-adcc3eb154cf",
+      "name": "Guardar Candidato",
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*)::int as total FROM asignaciones WHERE candidato_id = {{ $json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3900,
+        -160
+      ],
+      "id": "7e92e689-096c-4956-a1d8-0afce7011298",
+      "name": "Verificar Asignacion",
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6738ee8f-765d-46f2-9246-7dc4b3a73ce2",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4100,
+        -160
+      ],
+      "id": "30b11b61-8abd-4a7d-bd19-a756fed26e3c",
+      "name": "Es Nuevo Candidato"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, nombre, whatsapp FROM reclutadores WHERE activo = true ORDER BY leads_asignados ASC, id ASC LIMIT 1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4300,
+        -60
+      ],
+      "id": "d8328dda-b54f-46ef-a0d9-5de9ccf197f9",
+      "name": "Consultar Reclutador",
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO asignaciones (candidato_id, reclutador_id, estado) VALUES ({{ $('Guardar Candidato').item.json.id }}, {{ $json.id }}, 'pendiente')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4500,
+        -60
+      ],
+      "id": "2b3ef8b5-e12e-471e-870b-246c2f244f7f",
+      "name": "Registrar Asignacion",
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE reclutadores SET leads_asignados = leads_asignados + 1 WHERE id = {{ $('Consultar Reclutador').item.json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4700,
+        -60
+      ],
+      "id": "54814def-84e8-4ec9-a6bb-a6584084421c",
+      "name": "Actualizar Contador",
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://app.boosfy.com/api/v1/messages/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer pcp_e2254f5db61c2a2633f73a4deaef3fa3a0cdf2964d5c833f47d9254c400c5900"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channelId: 3389, to: $('Consultar Reclutador').item.json.whatsapp, message: '\\ud83d\\udd14 *Nuevo candidato asignado*\\n\\n\\ud83d\\udc64 *Nombre:* ' + ($('Guardar Candidato').item.json.nombre || 'Sin nombre aun') + '\\n\\ud83d\\udcf1 *WhatsApp:* ' + $('Boosfy Inbound').item.json.body.contact.phone + '\\n\\ud83d\\udcac *Primer mensaje:* ' + $('Boosfy Inbound').item.json.body.chatInput + '\\n\\n\\ud83d\\udcc5 _Asignado automaticamente por Thu Talento Humano IA_', messageType: 'text' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4900,
+        -60
+      ],
+      "id": "e22c2620-771e-4365-a65c-45f7ddb528dc",
+      "name": "Notificar Reclutador"
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Analiza la conversacion de WhatsApp entre el candidato y el asistente virtual.\nExtrae SOLO los datos mencionados explicitamente por el candidato (no inventes ni asumas).\nDevuelve un JSON con estos campos (null si no se menciona):\n\n{\n  \"nombre\": \"string o null\",\n  \"vacante_aplicada\": \"string o null\",\n  \"ciudad\": \"string o null\",\n  \"experiencia_anos\": numero_entero_o_null,\n  \"area_experiencia\": \"string o null\",\n  \"nivel_estudios\": \"Secundaria|Preparatoria|Tecnico|Licenciatura|Maestria|Doctorado|null\",\n  \"disponibilidad\": \"inmediata|fecha_especifica|null\",\n  \"expectativa_salarial\": \"string con monto o null\",\n  \"habilidades\": \"lista separada por comas o null\",\n  \"idiomas\": \"lista separada por comas o null\",\n  \"tiene_cv\": true|false|null,\n  \"cv_url\": \"url o null\"\n}\n\nResponde UNICAMENTE el JSON, sin texto adicional."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Conversacion actual:\\n' + $('Chat input').item.json.chat_input + '\\n\\nRespuesta del asistente:\\n' + $('Preparar Respuesta').item.json.mensajeFinal }}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        3700,
+        -320
+      ],
+      "id": "0a4411f1-b5ed-4f2e-816e-23f50728a923",
+      "name": "Extraer Ficha IA",
+      "credentials": {
+        "openAiApi": {
+          "id": "FXAla6LzcM8ZyIxJ",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DO $$\nDECLARE\n  v_ficha JSONB;\n  v_conv_id TEXT := '={{ $('Boosfy Inbound').item.json.body.conversation.id }}';\n  v_completitud INTEGER;\n  v_fields_filled INTEGER := 0;\n  v_total_fields INTEGER := 11;\nBEGIN\n  v_ficha := '={{ $json.message.content }}'::JSONB;\n\n  -- Contar campos llenos para calcular completitud\n  IF v_ficha->>'nombre' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'vacante_aplicada' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'ciudad' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'experiencia_anos' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'area_experiencia' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'nivel_estudios' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'disponibilidad' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'expectativa_salarial' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'habilidades' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'idiomas' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  IF v_ficha->>'tiene_cv' IS NOT NULL THEN v_fields_filled := v_fields_filled + 1; END IF;\n  v_completitud := ROUND((v_fields_filled::NUMERIC / v_total_fields) * 100);\n\n  UPDATE candidatos SET\n    nombre             = COALESCE(NULLIF(v_ficha->>'nombre','null'), nombre),\n    vacante_aplicada   = COALESCE(NULLIF(v_ficha->>'vacante_aplicada','null'), vacante_aplicada),\n    ciudad             = COALESCE(NULLIF(v_ficha->>'ciudad','null'), ciudad),\n    experiencia_anos   = COALESCE(NULLIF(v_ficha->>'experiencia_anos','null')::INTEGER, experiencia_anos),\n    area_experiencia   = COALESCE(NULLIF(v_ficha->>'area_experiencia','null'), area_experiencia),\n    nivel_estudios     = COALESCE(NULLIF(v_ficha->>'nivel_estudios','null'), nivel_estudios),\n    disponibilidad     = COALESCE(NULLIF(v_ficha->>'disponibilidad','null'), disponibilidad),\n    expectativa_salarial = COALESCE(NULLIF(v_ficha->>'expectativa_salarial','null'), expectativa_salarial),\n    habilidades        = COALESCE(NULLIF(v_ficha->>'habilidades','null'), habilidades),\n    idiomas            = COALESCE(NULLIF(v_ficha->>'idiomas','null'), idiomas),\n    tiene_cv           = COALESCE(NULLIF(v_ficha->>'tiene_cv','null')::BOOLEAN, tiene_cv),\n    cv_url             = COALESCE(NULLIF(v_ficha->>'cv_url','null'), cv_url),\n    ficha_completitud  = GREATEST(ficha_completitud, v_completitud),\n    updated_at         = NOW()\n  WHERE conversation_id = v_conv_id;\nEND $$;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3900,
+        -320
+      ],
+      "id": "49775793-703c-45a0-831b-0fbd9045028f",
+      "name": "Actualizar Ficha",
+      "credentials": {
+        "postgres": {
+          "id": "rNiASmL8Z9sa5xE1",
+          "name": "Postgres Thu TH"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar audio": {
+      "main": [
+        [
+          {
+            "node": "Transcribir audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribir audio": {
+      "main": [
+        [
+          {
+            "node": "Audio content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio content": {
+      "main": [
+        [
+          {
+            "node": "Chat input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text content": {
+      "main": [
+        [
+          {
+            "node": "Chat input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boosfy Inbound": {
+      "main": [
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar Respondio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Preparar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Descargar doc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Descargar audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analizar img",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar doc": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Doc content": {
+      "main": [
+        [
+          {
+            "node": "Chat input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar img": {
+      "main": [
+        [
+          {
+            "node": "Audio content1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio content1": {
+      "main": [
+        [
+          {
+            "node": "Chat input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Doc content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool_video_presentacion": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool_notify_soporte": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Guardar Candidato",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extraer Ficha IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Seguimiento": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Candidato": {
+      "main": [
+        [
+          {
+            "node": "Verificar Asignacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Asignacion": {
+      "main": [
+        [
+          {
+            "node": "Es Nuevo Candidato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Nuevo Candidato": {
+      "main": [
+        [
+          {
+            "node": "Consultar Reclutador",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar Seguimiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Reclutador": {
+      "main": [
+        [
+          {
+            "node": "Registrar Asignacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Asignacion": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Contador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Contador": {
+      "main": [
+        [
+          {
+            "node": "Notificar Reclutador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Reclutador": {
+      "main": [
+        [
+          {
+            "node": "Guardar Seguimiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Ficha IA": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Ficha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-18T17:34:05.209Z",
+      "createdAt": "2026-06-18T17:34:05.209Z",
+      "role": "workflow:owner",
+      "workflowId": "t0ckRrwdB0rqhn8r",
+      "projectId": "xp2j24JuyGnOMY8L",
+      "project": {
+        "updatedAt": "2025-11-17T21:05:34.841Z",
+        "createdAt": "2025-11-17T20:40:42.750Z",
+        "id": "xp2j24JuyGnOMY8L",
+        "name": "Paco Salgado <frace.marketing@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "updatedAt": "2025-11-17T20:40:42.751Z",
+            "createdAt": "2025-11-17T20:40:42.751Z",
+            "userId": "545f696b-1ad8-4860-b069-f2751c427088",
+            "projectId": "xp2j24JuyGnOMY8L",
+            "user": {
+              "updatedAt": "2026-06-18T15:56:17.000Z",
+              "createdAt": "2025-11-17T20:40:41.508Z",
+              "id": "545f696b-1ad8-4860-b069-f2751c427088",
+              "email": "frace.marketing@gmail.com",
+              "firstName": "Paco",
+              "lastName": "Salgado",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-11-17T21:06:01.201Z",
+                "personalization_survey_n8n_version": "1.120.3",
+                "companySize": "<20",
+                "companyType": "saas",
+                "role": "business-owner",
+                "reportedSource": "google"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "UR60O3iHPKO0TGJS",
+                "userActivatedAt": 1763750950250,
+                "npsSurvey": {
+                  "waitingForResponse": true,
+                  "ignoredCount": 1,
+                  "lastShownAt": 1780705167788
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-06-18",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": []
+}
